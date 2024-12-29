@@ -1,8 +1,14 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Star, StarHalf } from "lucide-react";
+import { Star, StarHalf, Package } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface Product {
   id: number;
@@ -12,6 +18,7 @@ interface Product {
   category: string;
   rating: number;
   description: string;
+  stock: number;
 }
 
 interface ProductCardProps {
@@ -46,6 +53,9 @@ const ProductCard = ({ product, onAddToCart }: ProductCardProps) => {
     return stars;
   };
 
+  const stockStatus = product.stock < 10 ? "Low Stock" : "In Stock";
+  const stockColor = product.stock < 10 ? "destructive" : "secondary";
+
   return (
     <Card className="w-full max-w-sm hover:shadow-lg transition-shadow">
       <CardHeader>
@@ -63,7 +73,22 @@ const ProductCard = ({ product, onAddToCart }: ProductCardProps) => {
           />
         </div>
         <div className="space-y-2">
-          <p className="text-2xl font-bold">${product.price.toFixed(2)}</p>
+          <div className="flex justify-between items-center">
+            <p className="text-2xl font-bold">${product.price.toFixed(2)}</p>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger>
+                  <Badge variant={stockColor} className="flex items-center gap-1">
+                    <Package className="h-3 w-3" />
+                    {stockStatus}
+                  </Badge>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{product.stock} units available</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
           <div className="flex items-center gap-1">
             {renderRating(product.rating)}
             <span className="text-sm text-muted-foreground ml-1">({product.rating})</span>
@@ -72,8 +97,12 @@ const ProductCard = ({ product, onAddToCart }: ProductCardProps) => {
         </div>
       </CardContent>
       <CardFooter>
-        <Button onClick={handleAddToCart} className="w-full">
-          Add to Cart
+        <Button 
+          onClick={handleAddToCart} 
+          className="w-full"
+          disabled={product.stock === 0}
+        >
+          {product.stock === 0 ? "Out of Stock" : "Add to Cart"}
         </Button>
       </CardFooter>
     </Card>
