@@ -6,7 +6,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
-// Enhanced product data with more items and categories
+interface CartItem {
+  id: number;
+  title: string;
+  price: number;
+  quantity: number;
+  stock: number;
+}
+
 const products = [
   {
     id: 1,
