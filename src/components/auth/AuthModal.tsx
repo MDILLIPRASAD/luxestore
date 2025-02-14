@@ -1,3 +1,4 @@
+
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import {
@@ -11,10 +12,12 @@ import {
 import { Input } from "@/components/ui/input"
 import { useAuth } from "@/contexts/AuthContext"
 import { useToast } from "@/hooks/use-toast"
+import { ResetPassword } from "./ResetPassword"
 
 export function AuthModal() {
   const [isOpen, setIsOpen] = useState(false)
   const [isSignUp, setIsSignUp] = useState(false)
+  const [isResetPassword, setIsResetPassword] = useState(false)
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const { signIn, signUp, user } = useAuth()
@@ -50,51 +53,85 @@ export function AuthModal() {
     return null
   }
 
+  const resetForm = () => {
+    setEmail("")
+    setPassword("")
+    setIsSignUp(false)
+    setIsResetPassword(false)
+  }
+
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog open={isOpen} onOpenChange={(open) => {
+      setIsOpen(open)
+      if (!open) resetForm()
+    }}>
       <DialogTrigger asChild>
         <Button variant="outline">Sign In</Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>{isSignUp ? "Create an account" : "Sign in"}</DialogTitle>
+          <DialogTitle>
+            {isResetPassword
+              ? "Reset Password"
+              : isSignUp
+              ? "Create an account"
+              : "Sign in"}
+          </DialogTitle>
           <DialogDescription>
-            {isSignUp
+            {isResetPassword
+              ? "Enter your email to receive a password reset link"
+              : isSignUp
               ? "Enter your email below to create your account"
               : "Enter your email below to sign in to your account"}
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Input
-              type="email"
-              placeholder="Email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-            <Input
-              type="password"
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
-          </div>
-          <Button type="submit" className="w-full">
-            {isSignUp ? "Sign Up" : "Sign In"}
-          </Button>
-          <Button
-            type="button"
-            variant="link"
-            className="w-full"
-            onClick={() => setIsSignUp(!isSignUp)}
-          >
-            {isSignUp
-              ? "Already have an account? Sign in"
-              : "Don't have an account? Sign up"}
-          </Button>
-        </form>
+        {isResetPassword ? (
+          <ResetPassword />
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Input
+                type="email"
+                placeholder="Email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+              <Input
+                type="password"
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+            </div>
+            <Button type="submit" className="w-full">
+              {isSignUp ? "Sign Up" : "Sign In"}
+            </Button>
+            <div className="flex flex-col gap-2">
+              <Button
+                type="button"
+                variant="link"
+                className="w-full"
+                onClick={() => setIsSignUp(!isSignUp)}
+              >
+                {isSignUp
+                  ? "Already have an account? Sign in"
+                  : "Don't have an account? Sign up"}
+              </Button>
+              {!isSignUp && (
+                <Button
+                  type="button"
+                  variant="link"
+                  className="w-full"
+                  onClick={() => setIsResetPassword(true)}
+                >
+                  Forgot password?
+                </Button>
+              )}
+            </div>
+          </form>
+        )}
       </DialogContent>
     </Dialog>
   )
