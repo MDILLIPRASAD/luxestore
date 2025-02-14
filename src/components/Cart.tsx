@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -7,9 +8,10 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { ShoppingCart, Plus, Minus, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import { useToast } from "@/hooks/use-toast";
 
 interface CartItem {
   id: number;
@@ -22,19 +24,68 @@ interface CartItem {
 interface CartProps {
   items: CartItem[];
   onCheckout: () => void;
+  onUpdateQuantity?: (itemId: number, newQuantity: number) => void;
+  onRemoveItem?: (itemId: number) => void;
 }
 
-const Cart = ({ items, onCheckout }: CartProps) => {
+const CART_STORAGE_KEY = 'cart_items';
+
+const Cart = ({ items, onCheckout, onUpdateQuantity, onRemoveItem }: CartProps) => {
   const [isOpen, setIsOpen] = useState(false);
+  const { toast } = useToast();
+  
   const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
   const shipping = total > 100 ? 0 : 10;
   const finalTotal = total + shipping;
 
+  const handleQuantityChange = (itemId: number, change: number) => {
+    const item = items.find((i) => i.id === itemId);
+    if (!item) return;
+
+    const newQuantity = item.quantity + change;
+    if (newQuantity < 1 || newQuantity > item.stock) return;
+
+    onUpdateQuantity?.(itemId, newQuantity);
+    
+    toast({
+      title: "Cart updated",
+      description: `Updated quantity of ${item.title}`,
+    });
+  };
+
+  const handleRemoveItem = (itemId: number) => {
+    onRemoveItem?.(itemId);
+    
+    toast({
+      title: "Item removed",
+      description: "Item has been removed from your cart",
+    });
+  };
+
   const handleCheckout = () => {
     onCheckout();
     setIsOpen(false);
   };
+
+  // Load cart items from localStorage on component mount
+  useEffect(() => {
+    const savedCart = localStorage.getItem(CART_STORAGE_KEY);
+    if (savedCart) {
+      const parsedCart = JSON.parse(savedCart);
+      // Update cart items if onUpdateQuantity is provided
+      if (onUpdateQuantity && Array.isArray(parsedCart)) {
+        parsedCart.forEach(item => {
+          onUpdateQuantity(item.id, item.quantity);
+        });
+      }
+    }
+  }, []);
+
+  // Save cart items to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items));
+  }, [items]);
 
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
@@ -73,9 +124,7 @@ const Cart = ({ items, onCheckout }: CartProps) => {
                       variant="outline"
                       size="icon"
                       className="h-8 w-8"
-                      onClick={() => {
-                        // Quantity update would go here
-                      }}
+                      onClick={() => handleQuantityChange(item.id, -1)}
                       disabled={item.quantity <= 1}
                     >
                       <Minus className="h-4 w-4" />
@@ -85,9 +134,7 @@ const Cart = ({ items, onCheckout }: CartProps) => {
                       variant="outline"
                       size="icon"
                       className="h-8 w-8"
-                      onClick={() => {
-                        // Quantity update would go here
-                      }}
+                      onClick={() => handleQuantityChange(item.id, 1)}
                       disabled={item.quantity >= item.stock}
                     >
                       <Plus className="h-4 w-4" />
@@ -96,9 +143,7 @@ const Cart = ({ items, onCheckout }: CartProps) => {
                       variant="ghost"
                       size="icon"
                       className="h-8 w-8 ml-auto text-destructive"
-                      onClick={() => {
-                        // Remove item would go here
-                      }}
+                      onClick={() => handleRemoveItem(item.id)}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>

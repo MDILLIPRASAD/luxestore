@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import ProductCard from "@/components/ProductCard";
 import Header from "@/components/Header";
@@ -543,7 +544,7 @@ const Index = () => {
       return matchesSearch && matchesCategory;
     });
     setFilteredProducts(filtered);
-    setCurrentPage(1); // Reset to first page when filters change
+    setCurrentPage(1);
   }, [searchTerm, selectedCategory]);
 
   const handleAddToCart = (product: typeof products[0]) => {
@@ -551,13 +552,30 @@ const Index = () => {
       const existingItem = prevItems.find((item) => item.id === product.id);
       if (existingItem) {
         return prevItems.map((item) =>
-          item.id === product.id
+          item.id === product.id && item.quantity < item.stock
             ? { ...item, quantity: item.quantity + 1 }
             : item
         );
       }
       return [...prevItems, { ...product, quantity: 1 }];
     });
+
+    toast({
+      title: "Added to cart",
+      description: `${product.title} has been added to your cart`,
+    });
+  };
+
+  const handleUpdateQuantity = (itemId: number, newQuantity: number) => {
+    setCartItems((prevItems) =>
+      prevItems.map((item) =>
+        item.id === itemId ? { ...item, quantity: newQuantity } : item
+      )
+    );
+  };
+
+  const handleRemoveItem = (itemId: number) => {
+    setCartItems((prevItems) => prevItems.filter((item) => item.id !== itemId));
   };
 
   const handleCheckout = () => {
@@ -566,11 +584,11 @@ const Index = () => {
       description: "Thank you for your purchase. Your order will be processed shortly.",
     });
     setCartItems([]);
+    localStorage.removeItem('cart_items');
   };
 
   const categories = ["all", ...new Set(products.map(p => p.category))];
   
-  // Pagination calculations
   const totalPages = Math.ceil(filteredProducts.length / ITEMS_PER_PAGE);
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
   const paginatedProducts = filteredProducts.slice(startIndex, startIndex + ITEMS_PER_PAGE);
@@ -581,6 +599,8 @@ const Index = () => {
         onSearch={setSearchTerm}
         cartItems={cartItems}
         onCheckout={handleCheckout}
+        onUpdateQuantity={handleUpdateQuantity}
+        onRemoveItem={handleRemoveItem}
       />
       <main className="flex-1 container py-8">
         <div className="mb-8">
